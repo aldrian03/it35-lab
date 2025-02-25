@@ -1,5 +1,4 @@
 import { 
-
     IonButton,
     IonContent, 
     IonHeader, 
@@ -64,3 +63,5 @@ import {
     </IonPage>
   );
   };
+
+  export default Menu;
