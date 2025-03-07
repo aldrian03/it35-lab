@@ -23,7 +23,7 @@ const Example: React.FC = () => {
         <IonCardSubtitle>Buy now.</IonCardSubtitle>
       </IonCardHeader>
       <IonCardContent>
-       An e-connerce platform for school supplies.
+       An e-commerce platform for school supplies.
       </IonCardContent>
 
       <IonButton fill="clear">Action 1</IonButton>
