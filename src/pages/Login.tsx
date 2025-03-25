@@ -1,117 +1,122 @@
-import { 
+import {
+  IonAlert,
+  IonAvatar,
   IonButton,
-  IonContent, 
-  IonHeader, 
-  IonInput, 
-  IonItem, 
-  IonLabel, 
-  IonPage, 
-  IonTitle, 
-  IonToolbar, 
+  IonButtons,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonInput,
+  IonInputPasswordToggle,
+  IonMenuButton,
+  IonPage,
+  IonTitle,
+  IonToast,
+  IonToolbar,
   useIonRouter
 } from '@ionic/react';
+import { personCircle } from 'ionicons/icons';
 import { useState } from 'react';
 
 const Login: React.FC = () => {
   const navigation = useIonRouter();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showAlert, setShowAlert] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   const doLogin = () => {
-    console.log('Username:', username);
-    console.log('Password:', password);
     navigation.push('/it35-lab/app', 'forward', 'replace');
-  };
-
-  const goToRegisterPage = () => {
-    // Navigate to the Register page
-    navigation.push('/Register', 'forward', 'replace');
-  };
-
+  }
+  const doRegister = () => {
+    navigation.push('/it35-lab/register', 'forward', 'replace');
+  }
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Login</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent 
-        fullscreen 
-        className="ion-padding" 
-        style={{ backgroundColor: '#f4f4f4' }}
-      >
-        <div 
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100vh', 
-            width: '100%',
-          }}
-        >
-          <div 
+      <IonContent className='ion-padding'>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: '25%'
+        }}>
+          <IonAvatar
             style={{
-              width: '90%',
-              maxWidth: '400px',
-              padding: '20px',
-              background: 'white',
-              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-              borderRadius: '10px',
-              textAlign: 'center'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '150px',
+              height: '150px',
+              borderRadius: '50%',
+              overflow: 'hidden'
             }}
           >
-            {/* Welcome text with animation */}
-            <h2 
-              style={{
-                marginBottom: '30px', 
-                color: '#333', 
-                fontWeight: 'bold', 
-                animation: 'fadeIn 2s ease-in-out'
-              }}
-            >
-              Welcome
-            </h2>
-            <IonItem style={{ marginBottom: '15px' }}>
-              <IonLabel position="floating">Username</IonLabel>
-              <IonInput 
-                value={username} 
-                onIonChange={e => setUsername(e.detail.value!)} 
-                clearInput
-              />
-            </IonItem>
-            <IonItem style={{ marginBottom: '15px' }}>
-              <IonLabel position="floating">Password</IonLabel>
-              <IonInput 
-                type="password" 
-                value={password}
-                onIonChange={(e) => setPassword(e.detail.value!)}  
-                clearOnEdit
-              />
-            </IonItem>
-            <IonButton 
-              onClick={doLogin} 
-              expand="full"
-              style={{
-                marginTop: '15px',
-                backgroundColor: '#3880ff',
-                borderRadius: '5px'
-              }}
-            >
-              Login
-            </IonButton>
-            <IonButton 
-              onClick={goToRegisterPage} 
-              expand="full"
-              style={{
-                marginTop: '15px',
-                backgroundColor: '#28a745',
-                borderRadius: '5px'
-              }}
-            >
-              Register
-            </IonButton>
-          </div>
+
+<IonIcon
+  icon={personCircle}
+  color="primary"
+  style={{ fontSize: "120px", color: "#6c757d" }}
+/>
+
+          </IonAvatar>
+          <h1 style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            
+          }}>Hello there!</h1>
+          <p style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: '10',
+          }}>Please login to your account.</p>
+          <IonInput
+            label="Email"
+            labelPlacement="floating"
+            fill="outline"
+            type="email"
+            placeholder="Enter Email"
+            value={email}
+            onIonChange={e => setEmail(e.detail.value!)}
+          />
+          <IonInput style={{
+            marginTop: '10px',
+          }}
+            fill="outline"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onIonChange={e => setPassword(e.detail.value!)}
+          ><IonInputPasswordToggle slot="end"></IonInputPasswordToggle></IonInput>
         </div>
+        <IonButton style={{
+          marginTop: '10px'
+        }} onClick={doLogin} expand="full" shape='round'>
+          Login
+        </IonButton>
+
+        <IonButton expand="full" fill="clear" shape='round'onClick={doRegister}>
+          Don't have an account? Register here
+        </IonButton>
+        <IonAlert
+                  isOpen={showAlert}
+                  onDidDismiss={() => setShowAlert(false)}
+                  header="Login Failed"
+                  message={errorMessage}
+                  buttons={['OK']}
+                />
+
+                {/* IonToast for success message */}
+                <IonToast
+                  isOpen={showToast}
+                  onDidDismiss={() => setShowToast(false)}
+                  message="Login successful! Redirecting..."
+                  duration={1500}
+                  position="top"
+                  color="primary"
+                />
       </IonContent>
     </IonPage>
   );
