@@ -15,7 +15,7 @@ import {
   IonToolbar,
   useIonRouter
 } from '@ionic/react';
-import { personCircle } from 'ionicons/icons';
+import { atCircleSharp, transgender } from 'ionicons/icons';
 import { useState } from 'react';
 
 const Login: React.FC = () => {
@@ -54,24 +54,23 @@ const Login: React.FC = () => {
             }}
           >
 
-<IonIcon
-  icon={personCircle}
-  color="primary"
-  style={{ fontSize: "120px", color: "#6c757d" }}
-/>
-
+            <IonIcon
+              icon={atCircleSharp}
+              color='primary'
+              style={{ fontSize: '120px', color: '#6c757d' }}
+            />
           </IonAvatar>
           <h1 style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             
-          }}>Hello there!</h1>
+          }}>Welcome back!</h1>
           <p style={{
             alignItems: 'center',
             justifyContent: 'center',
             opacity: '10',
-          }}>Please login to your account.</p>
+          }}>Please login your account</p>
           <IonInput
             label="Email"
             labelPlacement="floating"
