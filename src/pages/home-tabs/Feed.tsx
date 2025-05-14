@@ -18,7 +18,7 @@ const Feed: React.FC = () => {
           <IonButtons slot='start'>
             <IonMenuButton></IonMenuButton>
           </IonButtons>
-          <IonTitle>Feed</IonTitle>
+          <IonTitle>Movie Rating</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>

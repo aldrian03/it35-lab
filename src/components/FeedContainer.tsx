@@ -1,28 +1,43 @@
 import { useState, useEffect } from 'react';
-import { IonApp, IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonInput, IonLabel, IonModal, IonFooter, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonAlert, IonText, IonAvatar, IonCol, IonGrid, IonRow, IonIcon, IonPopover } from '@ionic/react';
+import { IonApp, IonContent, IonHeader, IonPage, IonTitle, IonToolbar, 
+  IonButton, IonInput, IonLabel, IonModal, IonFooter, IonCard, 
+  IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, 
+  IonAlert, IonText, IonAvatar, IonCol, IonGrid, IonRow, 
+  IonIcon, IonPopover, IonItem, IonSelect, IonSelectOption, 
+  IonRange, IonBadge, IonSearchbar } from '@ionic/react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabaseClient';
-import { colorFill, pencil, trash } from 'ionicons/icons';
+import { star, pencil, trash, videocam, starHalf } from 'ionicons/icons';
 
-interface Post {
-  post_id: string;
+interface MovieRating {
+  rating_id: string;
   user_id: number;
   username: string;
   avatar_url: string;
-  post_content: string;
-  post_created_at: string;
-  post_updated_at: string;
+  movie_title: string;
+  rating_value: number;
+  review_content: string;
+  created_at: string;
+  updated_at: string;
 }
 
-const FeedContainer = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [postContent, setPostContent] = useState('');
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
+const MovieRatingContainer = () => {
+  const [ratings, setRatings] = useState<MovieRating[]>([]);
+  const [movieTitle, setMovieTitle] = useState('');
+  const [ratingValue, setRatingValue] = useState(5);
+  const [reviewContent, setReviewContent] = useState('');
+  const [editingRating, setEditingRating] = useState<MovieRating | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [popoverState, setPopoverState] = useState<{ open: boolean; event: Event | null; postId: string | null }>({ open: false, event: null, postId: null });
+  const [alertMessage, setAlertMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [popoverState, setPopoverState] = useState<{ 
+    open: boolean; 
+    event: Event | null; 
+    ratingId: string | null 
+  }>({ open: false, event: null, ratingId: null });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -40,16 +55,25 @@ const FeedContainer = () => {
         }
       }
     };
-    const fetchPosts = async () => {
-      const { data, error } = await supabase.from('posts').select('*').order('post_created_at', { ascending: false });
-      if (!error) setPosts(data as Post[]);
+    
+    const fetchRatings = async () => {
+      const { data, error } = await supabase
+        .from('movie_ratings')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error) setRatings(data as MovieRating[]);
     };
+    
     fetchUser();
-    fetchPosts();
+    fetchRatings();
   }, []);
 
-  const createPost = async () => {
-    if (!postContent || !user || !username) return;
+  const createRating = async () => {
+    if (!movieTitle || !reviewContent || !user || !username) {
+      setAlertMessage('Please fill in all fields');
+      setIsAlertOpen(true);
+      return;
+    }
   
     // Fetch avatar URL
     const { data: userData, error: userError } = await supabase
@@ -65,84 +89,178 @@ const FeedContainer = () => {
   
     const avatarUrl = userData?.user_avatar_url || 'https://ionicframework.com/docs/img/demos/avatar.svg';
   
-    // Insert post with avatar URL
+    // Insert rating with avatar URL
     const { data, error } = await supabase
-      .from('posts')
+      .from('movie_ratings')
       .insert([
-        { post_content: postContent, user_id: user.id, username, avatar_url: avatarUrl }
+        { 
+          movie_title: movieTitle,
+          rating_value: ratingValue,
+          review_content: reviewContent,
+          user_id: user.id, 
+          username, 
+          avatar_url: avatarUrl 
+        }
       ])
       .select('*');
   
     if (!error && data) {
-      setPosts([data[0] as Post, ...posts]);
+      setRatings([data[0] as MovieRating, ...ratings]);
+      setAlertMessage('Movie rating posted successfully!');
+      setIsAlertOpen(true);
+    } else {
+      setAlertMessage('Failed to post rating');
+      setIsAlertOpen(true);
     }
   
-    setPostContent('');
+    resetForm();
   };
 
-  const deletePost = async (post_id: string) => {
-    await supabase.from('posts').delete().match({ post_id });
-    setPosts(posts.filter(post => post.post_id !== post_id));
+  const deleteRating = async (rating_id: string) => {
+    await supabase.from('movie_ratings').delete().match({ rating_id });
+    setRatings(ratings.filter(rating => rating.rating_id !== rating_id));
+    setAlertMessage('Rating deleted successfully!');
+    setIsAlertOpen(true);
   };
 
-  const startEditingPost = (post: Post) => {
-    setEditingPost(post);
-    setPostContent(post.post_content);
+  const startEditingRating = (rating: MovieRating) => {
+    setEditingRating(rating);
+    setMovieTitle(rating.movie_title);
+    setRatingValue(rating.rating_value);
+    setReviewContent(rating.review_content);
     setIsModalOpen(true);
   };
 
-  const savePost = async () => {
-    if (!postContent || !editingPost) return;
+  const saveRating = async () => {
+    if (!movieTitle || !reviewContent || !editingRating) return;
+    
     const { data, error } = await supabase
-      .from('posts')
-      .update({ post_content: postContent })
-      .match({ post_id: editingPost.post_id })
+      .from('movie_ratings')
+      .update({ 
+        movie_title: movieTitle,
+        rating_value: ratingValue,
+        review_content: reviewContent
+      })
+      .match({ rating_id: editingRating.rating_id })
       .select('*');
+      
     if (!error && data) {
-      const updatedPost = data[0] as Post;
-      setPosts(posts.map(post => (post.post_id === updatedPost.post_id ? updatedPost : post)));
-      setPostContent('');
-      setEditingPost(null);
+      const updatedRating = data[0] as MovieRating;
+      setRatings(ratings.map(rating => 
+        (rating.rating_id === updatedRating.rating_id ? updatedRating : rating)
+      ));
+      resetForm();
+      setEditingRating(null);
       setIsModalOpen(false);
+      setAlertMessage('Rating updated successfully!');
       setIsAlertOpen(true);
     }
   };
+  
+  const resetForm = () => {
+    setMovieTitle('');
+    setRatingValue(5);
+    setReviewContent('');
+  };
+  
+  const renderStars = (rating: number) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      if (i <= rating) {
+        stars.push(<IonIcon key={i} icon={star} color="warning" />);
+      } else if (i - 0.5 <= rating) {
+        stars.push(<IonIcon key={i} icon={starHalf} color="warning" />);
+      } else {
+        stars.push(<IonIcon key={i} icon={star} color="medium" />);
+      }
+    }
+    return stars;
+  };
+
+  const filteredRatings = searchQuery 
+    ? ratings.filter(rating => 
+        rating.movie_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        rating.review_content.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : ratings;
 
   return (
-   <>
-        <IonContent>
-          {user ? (
-            <>
+    <>
+      <IonContent>
+        {user ? (
+          <>
             <IonCard>
-                <IonCardHeader>
-                    <IonCardTitle>Create Post</IonCardTitle>
-                </IonCardHeader>
-                <IonCardContent>
-                    <IonInput value={postContent} onIonChange={e => setPostContent(e.detail.value!)} placeholder="Write a post..." />
-                </IonCardContent>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem' }}>
-                    <IonButton onClick={createPost}>Post</IonButton>
-                </div>
+              <IonCardHeader>
+                <IonCardTitle>Rate a Movie</IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <IonItem>
+                  <IonLabel position="stacked">Movie Title</IonLabel>
+                  <IonInput 
+                    value={movieTitle} 
+                    onIonChange={e => setMovieTitle(e.detail.value!)} 
+                    placeholder="Enter movie title" 
+                  />
+                </IonItem>
+                
+                <IonItem>
+                  <IonLabel>Your Rating: {ratingValue}/5</IonLabel>
+                  <IonRange 
+                    min={1} 
+                    max={5} 
+                    step={0.5} 
+                    value={ratingValue}
+                    onIonChange={e => setRatingValue(e.detail.value as number)}
+                  >
+                    <IonIcon slot="start" icon={starHalf} />
+                    <IonIcon slot="end" icon={star} />
+                  </IonRange>
+                </IonItem>
+                
+                <IonItem>
+                  <IonLabel position="stacked">Your Review</IonLabel>
+                  <IonInput 
+                    value={reviewContent} 
+                    onIonChange={e => setReviewContent(e.detail.value!)} 
+                    placeholder="Write your review..." 
+                  />
+                </IonItem>
+              </IonCardContent>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem' }}>
+                <IonButton onClick={createRating}>
+                  <IonIcon slot="start" icon={videocam} />
+                  Post Rating
+                </IonButton>
+              </div>
             </IonCard>
 
-              {posts.map(post => (
-                <IonCard key={post.post_id} style={{ marginTop: '2rem' }}>
+            <IonSearchbar 
+              value={searchQuery}
+              onIonChange={e => setSearchQuery(e.detail.value!)}
+              placeholder="Search ratings..."
+            />
+
+            {filteredRatings.map(rating => (
+              <IonCard key={rating.rating_id} style={{ marginTop: '1rem' }}>
                 <IonCardHeader>
                   <IonRow>
                     <IonCol size="1.85">
                       <IonAvatar>
-                        <img alt={post.username} src={post.avatar_url} />
+                        <img alt={rating.username} src={rating.avatar_url} />
                       </IonAvatar>
                     </IonCol>
                     <IonCol>
-                      <IonCardTitle style={{ marginTop: '10px' }}>{post.username}</IonCardTitle>
-                      <IonCardSubtitle>{new Date(post.post_created_at).toLocaleString()}</IonCardSubtitle>
+                      <IonCardTitle>{rating.username}</IonCardTitle>
+                      <IonCardSubtitle>{new Date(rating.created_at).toLocaleString()}</IonCardSubtitle>
                     </IonCol>
                     <IonCol size="auto">
-                      {/* Pencil icon triggers popover */}
                       <IonButton
                         fill="clear"
-                        onClick={(e) => setPopoverState({ open: true, event: e.nativeEvent, postId: post.post_id })}
+                        onClick={(e) => setPopoverState({ 
+                          open: true, 
+                          event: e.nativeEvent, 
+                          ratingId: rating.rating_id 
+                        })}
                       >
                         <IonIcon color="secondary" icon={pencil} />
                       </IonButton>
@@ -151,57 +269,117 @@ const FeedContainer = () => {
                 </IonCardHeader>
               
                 <IonCardContent>
-                    <IonText style={{ color: 'black' }}>
-                        <h1>{post.post_content}</h1>
-                    </IonText>
+                  <IonText>
+                    <h2><strong>{rating.movie_title}</strong></h2>
+                    <div style={{ display: 'flex', alignItems: 'center', margin: '10px 0' }}>
+                      {renderStars(rating.rating_value)}
+                      <IonBadge color="warning" style={{ marginLeft: '10px' }}>
+                        {rating.rating_value.toFixed(1)}
+                      </IonBadge>
+                    </div>
+                    <p>{rating.review_content}</p>
+                    {rating.updated_at !== rating.created_at && (
+                      <IonText color="medium">
+                        <small>Edited on {new Date(rating.updated_at).toLocaleString()}</small>
+                      </IonText>
+                    )}
+                  </IonText>
                 </IonCardContent>
                 
-                {/* Popover with Edit and Delete options */}
                 <IonPopover
-                  isOpen={popoverState.open && popoverState.postId === post.post_id}
+                  isOpen={popoverState.open && popoverState.ratingId === rating.rating_id}
                   event={popoverState.event}
-                  onDidDismiss={() => setPopoverState({ open: false, event: null, postId: null })}
+                  onDidDismiss={() => setPopoverState({ open: false, event: null, ratingId: null })}
                 >
-                  <IonButton fill="clear" onClick={() => { startEditingPost(post); setPopoverState({ open: false, event: null, postId: null }); }}>
+                  <IonButton fill="clear" onClick={() => { 
+                    startEditingRating(rating); 
+                    setPopoverState({ open: false, event: null, ratingId: null }); 
+                  }}>
+                    <IonIcon slot="start" icon={pencil} />
                     Edit
                   </IonButton>
-                  <IonButton fill="clear" color="danger" onClick={() => { deletePost(post.post_id); setPopoverState({ open: false, event: null, postId: null }); }}>
+                  <IonButton fill="clear" color="danger" onClick={() => { 
+                    deleteRating(rating.rating_id); 
+                    setPopoverState({ open: false, event: null, ratingId: null }); 
+                  }}>
+                    <IonIcon slot="start" icon={trash} />
                     Delete
                   </IonButton>
                 </IonPopover>
               </IonCard>
-              ))}
-            </>
-          ) : (
-            <IonLabel>Loading...</IonLabel>
-          )}
+            ))}
+          </>
+        ) : (
+          <IonLabel>Loading...</IonLabel>
+        )}
+      </IonContent>
+
+      <IonModal isOpen={isModalOpen} onDidDismiss={() => setIsModalOpen(false)}>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Edit Movie Rating</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <IonItem>
+            <IonLabel position="stacked">Movie Title</IonLabel>
+            <IonInput 
+              value={movieTitle} 
+              onIonChange={e => setMovieTitle(e.detail.value!)} 
+              placeholder="Enter movie title" 
+            />
+          </IonItem>
+          
+          <IonItem>
+            <IonLabel>Your Rating: {ratingValue}/5</IonLabel>
+            <IonRange 
+              min={1} 
+              max={5} 
+              step={0.5} 
+              value={ratingValue}
+              onIonChange={e => setRatingValue(e.detail.value as number)}
+            >
+              <IonIcon slot="start" icon={starHalf} />
+              <IonIcon slot="end" icon={star} />
+            </IonRange>
+          </IonItem>
+          
+          <IonItem>
+            <IonLabel position="stacked">Your Review</IonLabel>
+            <IonInput 
+              value={reviewContent} 
+              onIonChange={e => setReviewContent(e.detail.value!)} 
+              placeholder="Write your review..." 
+            />
+          </IonItem>
         </IonContent>
+        <IonFooter>
+          <IonToolbar>
+            <IonButtons slot="end">
+              <IonButton onClick={() => setIsModalOpen(false)}>Cancel</IonButton>
+              <IonButton strong onClick={saveRating}>Save</IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonFooter>
+      </IonModal>
 
-        <IonModal isOpen={isModalOpen} onDidDismiss={() => setIsModalOpen(false)}>
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>Edit Post</IonTitle>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent>
-            <IonInput value={postContent} onIonChange={e => setPostContent(e.detail.value!)} placeholder="Edit your post..." />
-          </IonContent>
-          <IonFooter>
-            <IonButton onClick={savePost}>Save</IonButton>
-            <IonButton onClick={() => setIsModalOpen(false)}>Cancel</IonButton>
-          </IonFooter>
-        </IonModal>
-
-        <IonAlert
-          isOpen={isAlertOpen}
-          onDidDismiss={() => setIsAlertOpen(false)}
-          header="Success"
-          message="Post updated successfully!"
-          buttons={['OK']}
-        />
-      </>
-      
+      <IonAlert
+        isOpen={isAlertOpen}
+        onDidDismiss={() => setIsAlertOpen(false)}
+        header="Message"
+        message={alertMessage}
+        buttons={['OK']}
+      />
+    </>
   );
 };
 
-export default FeedContainer;
+const IonButtons = ({ children, slot }) => {
+  return (
+    <div className={`ion-buttons ${slot ? `ion-buttons-${slot}` : ''}`} style={slot === 'end' ? { display: 'flex', justifyContent: 'flex-end' } : {}}>
+      {children}
+    </div>
+  );
+};
+
+export default MovieRatingContainer;
